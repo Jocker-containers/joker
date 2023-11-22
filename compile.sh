@@ -19,6 +19,9 @@ else
     echo "Rust has been successfully installed."
 fi
 
+# building the project
 cargo build --release
+# creating a config file
 echo '{"current_daemon":{"name":"localhost","socket_address":"127.0.0.1:8080"},"daemons":{}}' > config.cfg
+# installing binary
 cargo install --path .
