@@ -3,6 +3,7 @@ pub mod container;
 pub mod daemon;
 
 
+use std::io;
 use std::io::{Write};
 use clap::{arg, Command};
 use std::net::{IpAddr, SocketAddr, TcpStream};
@@ -10,7 +11,7 @@ use std::str::FromStr;
 use crate::daemon::{Daemon, get_config, write_config};
 use crate::errors::AbsentHashMapKeyError;
 
-
+/// The function to get the help message.
 pub fn cli() -> Command {
     Command::new("joker")
         .arg_required_else_help(true)
@@ -41,8 +42,22 @@ pub fn cli() -> Command {
                 .arg(arg!(<CONTAINER_NAME> ... "Stuff to add"))
                 .arg_required_else_help(true),
         )
+        .subcommand(
+            Command::new("trace")
+                .about("Traces the events on the daemon. Uses stdout by default.")
+        )
+        .subcommand(
+            Command::new("logs")
+                .about("Gets the output of the specified container.")
+                .arg(arg!(<CONTAINER_NAME> "The name of the container to get logs from. \
+                Uses stdout by default"))
+                .arg_required_else_help(true),
+        )
 }
 
+/// Entry function which executes cli commands.
+/// It parses the command and its arguments and then calls a
+/// corresponding Rust function.
 pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> {
     let matches = command.clone().get_matches();
     match matches.subcommand() {
@@ -75,6 +90,12 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
                 .collect::<Vec<_>>();
 
             run_containers(&containers)
+        }
+        Some(("trace", _)) => {
+            daemon_trace()
+        }
+        Some(("logs", sub_matches)) => {
+            todo!()
         }
         _ => {
             println!("Error: no such subcommand.");
@@ -133,17 +154,18 @@ fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
-    // TODO: getting logs from running containers
-
     let config = get_config()?;
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
 
     for &container_path in containers {
 
+        let binary_name = container_path.split('/').last()
+            .ok_or("Error: bad file path.")?.as_bytes().to_owned();
         let binary = std::fs::read(container_path)?;
         let binary_config = std::fs::read(format!("{}.joker", container_path))?;
 
+        tcp_stream.write_all(&binary_name)?;
         tcp_stream.write_all(&binary)?;
         tcp_stream.write_all(&binary_config)?;
     }
@@ -154,6 +176,14 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
         "current daemon".to_owned(),
     );
 
+    Ok(())
+}
+
+fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
+    Ok(())
+}
+
+fn get_logs(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
