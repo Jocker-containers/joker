@@ -3,7 +3,6 @@ pub mod container;
 pub mod daemon;
 
 
-use std::io;
 use std::io::{Write};
 use clap::{arg, Command};
 use std::net::{IpAddr, SocketAddr, TcpStream};
@@ -62,9 +61,9 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
     let matches = command.clone().get_matches();
     match matches.subcommand() {
         Some(("add", sub_matches)) => {
-            let daemon_name = sub_matches.get_one::<String>("DAEMON_NAME").expect("required");
-            let ip_addr = sub_matches.get_one::<String>("ip").expect("required");
-            let port = sub_matches.get_one::<String>("port").expect("required");
+            let daemon_name = sub_matches.get_one::<String>("DAEMON_NAME").expect("Daemon name is required, but not provided.");
+            let ip_addr = sub_matches.get_one::<String>("ip").expect("IP address is required, but not provided.");
+            let port = sub_matches.get_one::<String>("port").expect("Port number is required, but not provided.");
 
             match add_daemon(daemon_name, ip_addr, port) {
                 Ok(_) => {
@@ -107,7 +106,7 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
 fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = daemon::get_config()?;
 
-    let socket_addr = SocketAddr::new(IpAddr::from_str(ip_addr).unwrap(), port.parse()?);
+    let socket_addr = SocketAddr::new(IpAddr::from_str(ip_addr)?, port.parse()?);
 
     config.daemons.entry(daemon_name.to_owned()).or_insert(socket_addr);
 
@@ -130,7 +129,7 @@ fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     match config.daemons.get(name) {
         None => {
             println!(
-                "Error while switching to daemon {}: no such daemon",
+                "Error while switching to daemon {}: no such daemon.",
                 name,
             );
 
@@ -165,8 +164,16 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
         let binary = std::fs::read(container_path)?;
         let binary_config = std::fs::read(format!("{}.joker", container_path))?;
 
+        // Send the size of binary name and binary name itself
+        tcp_stream.write_all(&(binary_name.len() as u64).to_le_bytes())?;
         tcp_stream.write_all(&binary_name)?;
+
+        // Send the size of the binary and the binary itself
+        tcp_stream.write_all(&(binary.len() as u64).to_le_bytes())?;
         tcp_stream.write_all(&binary)?;
+
+        // Send the size of binary config and binary config itself
+        tcp_stream.write_all(&(binary_config.len() as u64).to_le_bytes())?;
         tcp_stream.write_all(&binary_config)?;
     }
 
