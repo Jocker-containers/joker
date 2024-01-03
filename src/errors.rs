@@ -1,6 +1,7 @@
 use std::{error, fmt};
 use std::fmt::{Debug, Display};
 
+/// This error represents the absence of the key in hashmap.
 #[derive(Debug, Clone)]
 pub struct AbsentHashMapKeyError;
 

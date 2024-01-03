@@ -3,7 +3,8 @@ pub mod container;
 pub mod daemon;
 
 
-use std::io::{Write};
+use std::io;
+use std::io::{Read, Write};
 use clap::{arg, Command};
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::str::FromStr;
@@ -103,6 +104,8 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
     }
 }
 
+/// Adds a daemon with specified ip address and port.
+/// Propagates the error down the stack trace.
 fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dyn std::error::Error>> {
     let mut config = daemon::get_config()?;
 
@@ -122,6 +125,8 @@ fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dy
     Ok(())
 }
 
+/// Changes current daemon to a specified one.
+/// Propagates the error down the stack trace.
 fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
 
     let mut config = daemon::get_config()?;
@@ -152,6 +157,8 @@ fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
     }
 }
 
+/// Sends containers to current daemon.
+/// Propagates the error down the stack trace.
 fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     let config = get_config()?;
 
@@ -186,15 +193,49 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
     Ok(())
 }
 
+/// Prints daemon messages to a standard output.
+/// Propagates the error down the stack trace.
 fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
+    let config = get_config()?;
+
+    let tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+
+    let received_data = read_all_from_stream(tcp_stream)?;
+
+    let received_data = String::from_utf8(received_data)?;
+
+    println!("{}", received_data);
+
     Ok(())
 }
 
+/// Receives a log of a specified container.
+/// Propagates the error down the stack trace.
 fn get_logs(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Shows help message.
 fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", command.render_help());
     Ok(())
+}
+
+fn read_all_from_stream(mut stream: TcpStream) -> io::Result<Vec<u8>> {
+    let mut buffer = Vec::new();
+    let mut temp_buffer = [0; 4096]; // Adjust the buffer size as needed
+
+    loop {
+        let bytes_read = stream.read(&mut temp_buffer)?;
+
+        if bytes_read == 0 {
+            // No more data to read, break out of the loop
+            break;
+        }
+
+        // Extend the buffer with the data that was just read
+        buffer.extend_from_slice(&temp_buffer[..bytes_read]);
+    }
+
+    Ok(buffer)
 }
