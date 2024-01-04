@@ -173,6 +173,10 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
         let binary = std::fs::read(container_path)?;
         let binary_config = std::fs::read(format!("{}.joker", container_path))?;
 
+        // Send the type of request
+        let request = Requests::Run;
+        tcp_stream.write_all(&[request as u8])?;
+
         // Send the size of binary name and binary name itself
         tcp_stream.write_all(&(binary_name.len() as u64).to_le_bytes())?;
         tcp_stream.write_all(&binary_name)?;
