@@ -4,6 +4,12 @@ use std::net::SocketAddr;
 use std::io;
 use serde::{Serialize, Deserialize};
 
+pub enum Requests {
+    Run = 0,
+    Trace = 1,
+    Logs = 2,
+}
+
 pub const PATH: &str = "config.cfg";
 
 #[derive(Serialize, Deserialize)]

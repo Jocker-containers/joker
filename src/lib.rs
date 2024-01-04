@@ -8,7 +8,7 @@ use std::io::{Read, Write};
 use clap::{arg, Command};
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::str::FromStr;
-use crate::daemon::{Daemon, get_config, write_config};
+use crate::daemon::{Daemon, get_config, write_config, Requests};
 use crate::errors::AbsentHashMapKeyError;
 
 /// The function to get the help message.
@@ -95,7 +95,9 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
             daemon_trace()
         }
         Some(("logs", sub_matches)) => {
-            todo!()
+            let container = sub_matches.get_one::<String>("CONTAINER_NAME")
+                .ok_or("Container name should be provided")?;
+            get_logs(container)
         }
         _ => {
             println!("Error: no such subcommand.");
@@ -198,11 +200,14 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
 fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
     let config = get_config()?;
 
-    let tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+    let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
 
-    let received_data = read_all_from_stream(tcp_stream)?;
+    // writing a request to a daemon
+    let request = Requests::Trace;
+    tcp_stream.write_all(&[request as u8])?;
 
-    let received_data = String::from_utf8(received_data)?;
+    // getting result from a daemon
+    let received_data = String::from_utf8(read_all_from_stream(tcp_stream)?)?;
 
     println!("{}", received_data);
 
@@ -211,7 +216,22 @@ fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Receives a log of a specified container.
 /// Propagates the error down the stack trace.
-fn get_logs(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>> {
+fn get_logs(container: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let config = get_config()?;
+
+    let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+
+    // writing request to a daemon
+    let request = Requests::Logs;
+    tcp_stream.write_all(&[request as u8])?;
+    // writing container name to a daemon
+    tcp_stream.write_all(container.as_bytes())?;
+
+    // getting result from a daemon
+    let received_data = String::from_utf8(read_all_from_stream(tcp_stream)?)?;
+
+    println!("{}", received_data);
+
     Ok(())
 }
 
