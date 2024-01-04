@@ -220,7 +220,7 @@ fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
 
 /// Receives a log of a specified container.
 /// Propagates the error down the stack trace.
-fn get_logs(container: &str) -> Result<(), Box<dyn std::error::Error>> {
+fn get_logs(container_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let config = get_config()?;
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
@@ -229,7 +229,8 @@ fn get_logs(container: &str) -> Result<(), Box<dyn std::error::Error>> {
     let request = Requests::Logs;
     tcp_stream.write_all(&[request as u8])?;
     // writing container name to a daemon
-    tcp_stream.write_all(container.as_bytes())?;
+    tcp_stream.write_all(&container_name.len().to_le_bytes())?;
+    tcp_stream.write_all(container_name.as_bytes())?;
 
     // getting result from a daemon
     let received_data = String::from_utf8(read_all_from_stream(tcp_stream)?)?;
