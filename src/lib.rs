@@ -166,6 +166,8 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
 
+    println!("Connection established. Sending files to a daemon");
+
     for &container_path in containers {
 
         let binary_name = container_path.split('/').last()
