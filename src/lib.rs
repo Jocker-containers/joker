@@ -39,16 +39,16 @@ pub fn cli() -> Command {
             Command::new("run")
                 .about("Run specified containers on a current daemon.")
                 .arg_required_else_help(true)
-                .arg(arg!(<CONTAINER_NAME> ... "Stuff to add"))
+                .arg(arg!(<CONTAINER_NAME> ... "Containers to run"))
                 .arg_required_else_help(true),
         )
         .subcommand(
             Command::new("trace")
-                .about("Traces the events on the daemon. Uses stdout by default.")
+                .about("Trace the events on the daemon. Uses stdout by default.")
         )
         .subcommand(
             Command::new("logs")
-                .about("Gets the output of the specified container.")
+                .about("Get the output of the specified container.")
                 .arg(arg!(<CONTAINER_NAME> "The name of the container to get logs from. \
                 Uses stdout by default"))
                 .arg_required_else_help(true),
