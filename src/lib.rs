@@ -113,7 +113,7 @@ fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dy
 
     let socket_addr = SocketAddr::new(IpAddr::from_str(ip_addr)?, port.parse()?);
 
-    config.daemons.entry(daemon_name.to_owned()).or_insert(socket_addr);
+    config.daemons.insert(daemon_name.to_owned(), socket_addr);
 
     println!(
         "Added daemon {} at ip {} and port {}.",
