@@ -130,7 +130,6 @@ fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dy
 /// Changes current daemon to a specified one.
 /// Propagates the error down the stack trace.
 fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
-
     let mut config = daemon::get_config()?;
 
     match config.daemons.get(name) {
@@ -150,7 +149,9 @@ fn checkout_daemon(name: &str) -> Result<(), Box<dyn std::error::Error>> {
                 name,
             );
 
+            let previous = config.current_daemon.clone();
             config.current_daemon = Daemon {name, socket_address};
+            config.daemons.insert(previous.name, previous.socket_address);
 
             write_config(&config)?;
 

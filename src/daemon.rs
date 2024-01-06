@@ -12,7 +12,7 @@ pub enum Requests {
 
 pub const PATH: &str = "config.cfg";
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Daemon {
     pub name: String,
     pub socket_address: SocketAddr,
