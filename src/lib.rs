@@ -166,6 +166,7 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
     let config = get_config()?;
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+    tcp_stream.set_nodelay(true)?;
 
     println!("Connection established. Sending files to a daemon");
 
@@ -208,6 +209,7 @@ fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
     let config = get_config()?;
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+    tcp_stream.set_nodelay(true)?;
 
     // writing a request to a daemon
     let request = Requests::Trace;
@@ -227,6 +229,7 @@ fn get_logs(container_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     let config = get_config()?;
 
     let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+    tcp_stream.set_nodelay(true)?;
 
     // writing request to a daemon
     let request = Requests::Logs;
