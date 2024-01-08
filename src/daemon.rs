@@ -8,6 +8,7 @@ pub enum Requests {
     Run = 0,
     Trace = 1,
     Logs = 2,
+    Send = 3,
 }
 
 pub const PATH: &str = "config.cfg";

@@ -53,6 +53,12 @@ pub fn cli() -> Command {
                 Uses stdout by default"))
                 .arg_required_else_help(true),
         )
+        .subcommand(
+            Command::new("send")
+                .about("Sends the config file to a daemon.")
+                .arg(arg!(<CONFIG_PATH> "The config file to send."))
+                .arg_required_else_help(true),
+        )
 }
 
 /// Entry function which executes cli commands.
@@ -99,12 +105,18 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
                 .ok_or("Container name should be provided")?;
             get_logs(container)
         }
+        Some(("send", sub_matches)) => {
+            let config = sub_matches.get_one::<String>("CONFIG_PATH")
+                .ok_or("Path should be provided")?;
+            send_config(config)
+        }
         _ => {
             println!("Error: no such subcommand.");
             show_help_message(command)
         },
     }
 }
+
 
 /// Adds a daemon with specified ip address and port.
 /// Propagates the error down the stack trace.
@@ -247,6 +259,33 @@ fn get_logs(container_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
+/// Sends a config file to a daemon.
+/// Propagates the error down the stack trace.
+fn send_config(config_path: &String) -> Result<(), Box<dyn std::error::Error>> {
+    let config = get_config()?;
+
+    let mut tcp_stream = TcpStream::connect(config.current_daemon.socket_address)?;
+    tcp_stream.set_nodelay(true)?;
+
+    let config_name = config_path.split('/').last()
+        .ok_or("Error: bad file path.")?.as_bytes().to_owned();
+    let config = std::fs::read(config_path)?;
+
+    // Send the type of request
+    let request = Requests::Send;
+    tcp_stream.write_all(&[request as u8])?;
+
+    // Send the size of config name and config name itself
+    tcp_stream.write_all(&(config_name.len() as u64).to_le_bytes())?;
+    tcp_stream.write_all(&config_name)?;
+
+    // Send the size of the config and the config itself
+    tcp_stream.write_all(&(config.len() as u64).to_le_bytes())?;
+    tcp_stream.write_all(&config)?;
+
+    Ok(())
+}
+
 /// Shows help message.
 fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", command.render_help());
@@ -256,11 +295,11 @@ fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Er
 fn read_all_from_stream(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
     let mut size_of_message = [0u8; 8];
     stream.read_exact(&mut size_of_message[..])?;
-    size_of_message.reverse();
-    let size_of_message = u64::from_be_bytes(size_of_message);
+    let size_of_message = u64::from_le_bytes(size_of_message);
 
     let mut message = vec![0; size_of_message as usize];
     stream.read_exact(&mut message[..])?;
 
     Ok(message)
 }
+
