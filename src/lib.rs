@@ -55,7 +55,7 @@ pub fn cli() -> Command {
         )
         .subcommand(
             Command::new("send")
-                .about("Sends the config file to a daemon.")
+                .about("Send the config file to a daemon.")
                 .arg(arg!(<CONFIG_PATH> "The config file to send."))
                 .arg_required_else_help(true),
         )
