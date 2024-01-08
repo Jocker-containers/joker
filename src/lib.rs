@@ -256,6 +256,7 @@ fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Er
 fn read_all_from_stream(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
     let mut size_of_message = [0u8; 8];
     stream.read_exact(&mut size_of_message[..])?;
+    size_of_message.reverse();
     let size_of_message = u64::from_be_bytes(size_of_message);
 
     let mut message = vec![0; size_of_message as usize];
