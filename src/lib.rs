@@ -210,7 +210,7 @@ fn run_containers(containers: &[&str]) -> Result<(), Box<dyn std::error::Error>>
     println!(
         "Running containers {} at daemon {}.",
         containers.join(", "),
-        "current daemon".to_owned(),
+        config.current_daemon.name,
     );
 
     Ok(())
@@ -269,7 +269,7 @@ fn send_config(config_path: &String) -> Result<(), Box<dyn std::error::Error>> {
 
     let config_name = config_path.split('/').last()
         .ok_or("Error: bad file path.")?.as_bytes().to_owned();
-    let config = std::fs::read(config_path)?;
+    let config_file = std::fs::read(config_path)?;
 
     // Send the type of request
     let request = Requests::Send;
@@ -280,8 +280,15 @@ fn send_config(config_path: &String) -> Result<(), Box<dyn std::error::Error>> {
     tcp_stream.write_all(&config_name)?;
 
     // Send the size of the config and the config itself
-    tcp_stream.write_all(&(config.len() as u64).to_le_bytes())?;
-    tcp_stream.write_all(&config)?;
+    tcp_stream.write_all(&(config_file.len() as u64).to_le_bytes())?;
+    tcp_stream.write_all(&config_file)?;
+
+    println!(
+        "Sending config file {} at daemon {}.",
+        String::from_utf8(config_name)?,
+        config.current_daemon.name,
+    );
+
 
     Ok(())
 }
