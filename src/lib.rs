@@ -109,6 +109,7 @@ pub fn execute(command: &mut Command) -> Result<(), Box<dyn std::error::Error>> 
 /// Adds a daemon with specified ip address and port.
 /// Propagates the error down the stack trace.
 fn add_daemon(daemon_name: &str, ip_addr: &str, port: &str) -> Result<(), Box<dyn std::error::Error>> {
+    // TODO: add checking whether we modify current daemon
     let mut config = daemon::get_config()?;
 
     let socket_addr = SocketAddr::new(IpAddr::from_str(ip_addr)?, port.parse()?);
@@ -253,20 +254,14 @@ fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Er
 }
 
 fn read_all_from_stream(mut stream: TcpStream) -> io::Result<Vec<u8>> {
-    let mut buffer = Vec::new();
-    let mut temp_buffer = [0; 4096]; // Adjust the buffer size as needed
+    let mut size_of_message = [0u8; 8];
+    stream.read_exact(&mut size_of_message[..])?;
+    let size_of_message = u64::from_be_bytes(size_of_message);
 
-    loop {
-        let bytes_read = stream.read(&mut temp_buffer)?;
+    let mut message = vec![0; size_of_message as usize];
+    message.resize(size_of_message as usize, 0u8);
+    stream.read_exact(&mut message[..])?;
 
-        if bytes_read == 0 {
-            // No more data to read, break out of the loop
-            break;
-        }
 
-        // Extend the buffer with the data that was just read
-        buffer.extend_from_slice(&temp_buffer[..bytes_read]);
-    }
-
-    Ok(buffer)
+    Ok(message)
 }
