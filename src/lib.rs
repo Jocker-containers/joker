@@ -217,7 +217,7 @@ fn daemon_trace() -> Result<(), Box<dyn std::error::Error>> {
     tcp_stream.write_all(&[request as u8])?;
 
     // getting result from a daemon
-    let received_data = String::from_utf8(read_all_from_stream(tcp_stream)?)?;
+    let received_data = String::from_utf8(read_all_from_stream(&mut tcp_stream)?)?;
 
     println!("{}", received_data);
 
@@ -240,7 +240,7 @@ fn get_logs(container_name: &str) -> Result<(), Box<dyn std::error::Error>> {
     tcp_stream.write_all(container_name.as_bytes())?;
 
     // getting result from a daemon
-    let received_data = String::from_utf8(read_all_from_stream(tcp_stream)?)?;
+    let received_data = String::from_utf8(read_all_from_stream(&mut tcp_stream)?)?;
 
     println!("{}", received_data);
 
@@ -253,15 +253,13 @@ fn show_help_message(command: &mut Command) -> Result<(), Box<dyn std::error::Er
     Ok(())
 }
 
-fn read_all_from_stream(mut stream: TcpStream) -> io::Result<Vec<u8>> {
+fn read_all_from_stream(stream: &mut TcpStream) -> io::Result<Vec<u8>> {
     let mut size_of_message = [0u8; 8];
     stream.read_exact(&mut size_of_message[..])?;
     let size_of_message = u64::from_be_bytes(size_of_message);
 
     let mut message = vec![0; size_of_message as usize];
-    message.resize(size_of_message as usize, 0u8);
     stream.read_exact(&mut message[..])?;
-
 
     Ok(message)
 }
