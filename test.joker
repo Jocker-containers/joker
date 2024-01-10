@@ -1,0 +1,9 @@
+Container name: test
+IPC namespace name:
+User namespace name:
+Mount namespace name: test_1
+PID namespace name:
+Network namespace name:
+Time namespace name:
+UTS namespace name: uts_1
+Cgroup name:

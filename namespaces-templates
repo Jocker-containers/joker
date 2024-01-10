@@ -1,0 +1,26 @@
+Namespace-template
+ID: 1
+Namespace type: 1
+New root filesystem path: ./data/alpine_rootfs
+Filesystem: ext4
+Put old: ./data/.put_old
+
+Namespace-template
+ID: 2
+Namespace type: 6
+Hostname: hostname from template!
+
+Namespace
+Namespace name: test_1
+Template-Id: 1
+Namespace type: 1
+
+Namespace
+Namespace name: test_2
+Template-Id: 1
+Namespace type: 1
+
+Namespace
+Namespace name: uts_1
+Template-Id: 2
+Namespace type: 6
